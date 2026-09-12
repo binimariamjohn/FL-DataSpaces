@@ -1,0 +1,27 @@
+{
+    "paths": {
+        "dataset_path": "../data/",
+        "results_path": "../results/",
+        "logs_path": "../logs"
+    },
+    "random_seed": 42,
+    "input_shape": [28, 28, 1],
+    "dataset_details": {
+        "dataset_name": "FASHION-MNIST",
+        "dataset_type": "classification",
+        "num_classes": 10,
+        "image_extensions": ".npz",
+        "dataset_split": {
+            "training_dataset_dir": "train",
+            "global_test_dir": "test"
+        }
+    },
+    "dataset_factors": [
+        {
+            "num_clients": 1,
+            "partition_size": 0,
+            "distribution": "iid",
+            "fairness_ratios": [1]
+        }
+    ]
+}

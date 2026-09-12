@@ -1,0 +1,65 @@
+{
+  "experiments": ["with-edc", "without-edc"],
+
+  "datasetFactors": {
+    "dataset_name": "mnist",
+    "num_clients": [2, 3, 4, 5, 6],
+    "data_distribution": ["balanced", "imbalanced"]
+  },
+
+  "factor_definitions": {
+    "network": {
+      "ethernet": {"type": "ethernet"},
+      "wifi": {"type": "wifi"}
+    },
+    "algorithm": {
+      "sync": {"aggregation": "fedavg", "mode": "sync"},
+      "async": {"aggregation": "fedasync", "mode": "async"}
+    },
+    "data_rate": {
+      "high": {
+        "client_data_rate_kbps": 2048,
+        "server_data_rate_kbps": 10240
+      },
+      "low": {
+        "client_data_rate_kbps": 512,
+        "server_data_rate_kbps": 2560
+      }
+    },
+    "fairness": {
+      "balanced": {
+        "2": [0.50, 0.50],
+        "3": [0.34, 0.33, 0.33],
+        "4": [0.25, 0.25, 0.25, 0.25],
+        "5": [0.20, 0.20, 0.20, 0.20, 0.20],
+        "6": [0.17, 0.17, 0.16, 0.17, 0.17, 0.16]
+      },
+      "imbalanced": {
+        "2": [0.80, 0.20],
+        "3": [0.60, 0.25, 0.15],
+        "4": [0.45, 0.25, 0.18, 0.12],
+        "5": [0.40, 0.22, 0.16, 0.12, 0.10],
+        "6": [0.35, 0.20, 0.16, 0.12, 0.10, 0.07]
+      }
+    }
+  },
+
+  "scenarios": [
+    ["ethernet", "sync",  "high", "balanced"],
+    ["ethernet", "sync",  "high", "imbalanced"],
+    ["ethernet", "sync",  "low",  "balanced"],
+    ["ethernet", "sync",  "low",  "imbalanced"],
+    ["ethernet", "async", "high", "balanced"],
+    ["ethernet", "async", "high", "imbalanced"],
+    ["ethernet", "async", "low",  "balanced"],
+    ["ethernet", "async", "low",  "imbalanced"],
+    ["wifi",     "sync",  "high", "balanced"],
+    ["wifi",     "sync",  "high", "imbalanced"],
+    ["wifi",     "sync",  "low",  "balanced"],
+    ["wifi",     "sync",  "low",  "imbalanced"],
+    ["wifi",     "async", "high", "balanced"],
+    ["wifi",     "async", "high", "imbalanced"],
+    ["wifi",     "async", "low",  "balanced"],
+    ["wifi",     "async", "low",  "imbalanced"]
+  ]
+}

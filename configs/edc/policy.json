@@ -1,0 +1,22 @@
+{
+  "@context": {
+    "edc": "https://w3id.org/edc/v0.0.1/ns/",
+    "odrl": "http://www.w3.org/ns/odrl/2/"
+  },
+  "@id": "{{POLICY_ID}}",
+  "policy": {
+    "@type": "odrl:Set",
+    "odrl:permission": [
+      {
+        "odrl:action": "use"
+      }
+    ],
+    "edc:extensibleProperties": {
+        "edc:downloadable": "true",
+        "edc:shareWith": "user_id_here",
+        "edc:shareType": "0",
+        "edc:permissionType": "1",
+        "edc:expirationTime": "1"
+    }
+  }
+}

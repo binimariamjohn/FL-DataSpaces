@@ -1,0 +1,1209 @@
+#version: '3.8'
+
+networks:
+  fl-network:
+    driver: bridge
+
+volumes:
+  # Client 1 (Data Provider 1) Volumes
+  client-1-nextcloud-storage:
+  client-1-nextcloud-db:
+  client-1-data:
+
+  # Client 2 (Data Provider 2) Volumes
+  client-2-nextcloud-storage:
+  client-2-nextcloud-db:
+  client-2-data:
+
+  # Client 3 (Data Provider 3) Volumes
+  client-3-nextcloud-storage:
+  client-3-nextcloud-db:
+  client-3-data:
+
+  # Client 4 (Data Provider 4) Volumes
+  client-4-nextcloud-storage:
+  client-4-nextcloud-db:
+  client-4-data:
+
+  # Client 5 (Data Provider 5) Volumes
+  client-5-nextcloud-storage:
+  client-5-nextcloud-db:
+  client-5-data:
+
+  # Client 6 (Data Provider 6) Volumes
+  client-6-nextcloud-storage:
+  client-6-nextcloud-db:
+  client-6-data:
+
+  # Client 7 (Data Provider 7) Volumes
+  client-7-nextcloud-storage:
+  client-7-nextcloud-db:
+  client-7-data:
+
+  # Client 8 (Data Provider 8) Volumes
+  client-8-nextcloud-storage:
+  client-8-nextcloud-db:
+  client-8-data:
+
+  # Client 9 (Data Provider 9) Volumes
+  client-9-nextcloud-storage:
+  client-9-nextcloud-db:
+  client-9-data:
+
+  # Client 10 (Data Provider 10) Volumes
+  client-10-nextcloud-storage:
+  client-10-nextcloud-db:
+  client-10-data:
+
+  # Research Centre 1 Volumes
+  research-centre-nextcloud-storage:
+  research-centre-nextcloud-db:
+  research-centre-data:
+
+services:
+  # Client 1
+
+  client-1-cloud-db:
+    image: postgres:13
+    container_name: client-1-cloud-db
+    networks:
+      - fl-network
+    restart: always
+    volumes:
+      - client-1-nextcloud-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdbadmin -d pdbnextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  client-1-nextcloud:
+    image: nextcloud:25
+    container_name: client-1-nextcloud
+    networks:
+      - fl-network
+    restart: always
+    ports:
+      - "8081:80"
+    volumes:
+      - client-1-nextcloud-storage:/var/www/html
+      - client-1-data:/data/client_1
+    environment:
+      - POSTGRES_HOST=client-1-cloud-db
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+      - NEXTCLOUD_ADMIN_USER=padmin
+      - NEXTCLOUD_ADMIN_PASSWORD=p123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost client-1-nextcloud client-2-nextcloud client-3-nextcloud client-4-nextcloud client-5-nextcloud client-6-nextcloud research-centre-nextcloud
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=512M
+      - APACHE_BODY_LIMIT=0
+    depends_on:
+      client-1-cloud-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  client-1-connector:
+    image: edc-ionos-nextcloud:1.0
+    container_name: client-1-connector
+    networks:
+      - fl-network
+    ports:
+      - "8181:8181" # API
+      - "8182:8182" # Management
+      - "8282:8282" # Protocol
+      - "8283:8283" # Control
+      - "8284:8284" # Public
+    volumes:
+      - ./configs/resources/client-1-resources:/resources
+    environment:
+      EDC_FS_CONFIG: /resources/config.properties
+    depends_on:
+      client-1-nextcloud:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f -X POST -H 'X-API-Key: password' -H 'Content-Type: application/json' http://localhost:8182/management/v3/assets/request -d '{\"@context\":{\"@vocab\":\"https://w3id.org/edc/v0.0.1/ns/\"},\"@type\":\"QuerySpec\"}'"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+  # Federated learning containers
+
+  marketplace-webapp:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: marketplace-webapp
+    networks:
+      - fl-network
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/app
+    command: python3 dataspace/marketplace/dataspace_web_app.py
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  client-1-trainer:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: client-1-trainer
+    networks:
+      - fl-network
+    volumes:
+      - .:/app
+      - ../data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - client-1-nextcloud-storage:/nextcloud-data
+    command: python3 fedLearning/fl_client.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CLIENT_ID=client-1
+
+  client-2-trainer:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: client-2-trainer
+    networks:
+      - fl-network
+    volumes:
+      - .:/app
+      - ../data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - client-2-nextcloud-storage:/nextcloud-data
+    command: python3 fedLearning/fl_client.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CLIENT_ID=client-2
+
+  client-3-trainer:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: client-3-trainer
+    networks:
+      - fl-network
+    volumes:
+      - .:/app
+      - ../data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - client-3-nextcloud-storage:/nextcloud-data
+    command: python3 fedLearning/fl_client.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CLIENT_ID=client-3
+
+  client-4-trainer:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: client-4-trainer
+    networks:
+      - fl-network
+    volumes:
+      - .:/app
+      - ../data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - client-4-nextcloud-storage:/nextcloud-data
+    command: python3 fedLearning/fl_client.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CLIENT_ID=client-4
+
+  client-5-trainer:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: client-5-trainer
+    networks:
+      - fl-network
+    volumes:
+      - .:/app
+      - ../data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - client-5-nextcloud-storage:/nextcloud-data
+    command: python3 fedLearning/fl_client.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CLIENT_ID=client-5
+
+  client-6-trainer:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: client-6-trainer
+    networks:
+      - fl-network
+    volumes:
+      - .:/app
+      - ../data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - client-6-nextcloud-storage:/nextcloud-data
+    command: python3 fedLearning/fl_client.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CLIENT_ID=client-6
+
+  client-7-trainer:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: client-7-trainer
+    networks:
+      - fl-network
+    volumes:
+      - .:/app
+      - ../data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - client-7-nextcloud-storage:/nextcloud-data
+    command: python3 fedLearning/fl_client.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CLIENT_ID=client-7
+
+  client-8-trainer:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: client-8-trainer
+    networks:
+      - fl-network
+    volumes:
+      - .:/app
+      - ../data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - client-8-nextcloud-storage:/nextcloud-data
+    command: python3 fedLearning/fl_client.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CLIENT_ID=client-8
+
+  client-9-trainer:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: client-9-trainer
+    networks:
+      - fl-network
+    volumes:
+      - .:/app
+      - ../data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - client-9-nextcloud-storage:/nextcloud-data
+    command: python3 fedLearning/fl_client.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CLIENT_ID=client-9
+
+  client-10-trainer:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: client-10-trainer
+    networks:
+      - fl-network
+    volumes:
+      - .:/app
+      - ../data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - client-10-nextcloud-storage:/nextcloud-data
+    command: python3 fedLearning/fl_client.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CLIENT_ID=client-10
+
+  rc-fl-server:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.fl-trainer
+    container_name: rc-fl-server
+    networks:
+      - fl-network
+    ports:
+      - "9091:9091"
+    volumes:
+      - .:/app
+      - ../data:/data
+      - ${RESULTS_PATH:-../../results}:/results
+      - ${LOGS_PATH:-../../logs}:/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - research-centre-nextcloud-storage:/nextcloud-data
+    command: python3 fedLearning/fl_server.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - RUN_ID=${RUN_ID:-default}
+    restart: "no"
+  # Client 2
+
+  client-2-cloud-db:
+    image: postgres:13
+    container_name: client-2-cloud-db
+    networks:
+      - fl-network
+    restart: always
+    volumes:
+      - client-2-nextcloud-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdbadmin -d pdbnextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  client-2-nextcloud:
+    image: nextcloud:25
+    container_name: client-2-nextcloud
+    networks:
+      - fl-network
+    restart: always
+    ports:
+      - "8083:80"
+    volumes:
+      - client-2-nextcloud-storage:/var/www/html
+      - client-2-data:/data/client_2
+    environment:
+      - POSTGRES_HOST=client-2-cloud-db
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+      - NEXTCLOUD_ADMIN_USER=padmin
+      - NEXTCLOUD_ADMIN_PASSWORD=p123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost client-1-nextcloud client-2-nextcloud client-3-nextcloud client-4-nextcloud client-5-nextcloud client-6-nextcloud research-centre-nextcloud
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=512M
+      - APACHE_BODY_LIMIT=0
+    depends_on:
+      client-2-cloud-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  client-2-connector:
+    image: edc-ionos-nextcloud:1.0
+    container_name: client-2-connector
+    networks:
+      - fl-network
+    ports:
+      - "10181:10181" # API
+      - "10182:10182" # Management
+      - "10282:10282" # Protocol
+      - "10283:10283" # Control
+      - "10284:10284" # Public
+    volumes:
+      - ./configs/resources/client-2-resources:/resources
+    environment:
+      EDC_FS_CONFIG: /resources/config.properties
+    depends_on:
+      client-2-nextcloud:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f -X POST -H 'X-API-Key: password' -H 'Content-Type: application/json' http://localhost:10182/management/v3/assets/request -d '{\"@context\":{\"@vocab\":\"https://w3id.org/edc/v0.0.1/ns/\"},\"@type\":\"QuerySpec\"}'"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Client 3
+
+  client-3-cloud-db:
+    image: postgres:13
+    container_name: client-3-cloud-db
+    networks:
+      - fl-network
+    restart: always
+    volumes:
+      - client-3-nextcloud-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdbadmin -d pdbnextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  client-3-nextcloud:
+    image: nextcloud:25
+    container_name: client-3-nextcloud
+    networks:
+      - fl-network
+    restart: always
+    ports:
+      - "8085:80"
+    volumes:
+      - client-3-nextcloud-storage:/var/www/html
+      - client-3-data:/data/client_3
+    environment:
+      - POSTGRES_HOST=client-3-cloud-db
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+      - NEXTCLOUD_ADMIN_USER=padmin
+      - NEXTCLOUD_ADMIN_PASSWORD=p123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost client-1-nextcloud client-2-nextcloud client-3-nextcloud client-4-nextcloud client-5-nextcloud client-6-nextcloud research-centre-nextcloud
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=512M
+      - APACHE_BODY_LIMIT=0
+    depends_on:
+      client-3-cloud-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  client-3-connector:
+    image: edc-ionos-nextcloud:1.0
+    container_name: client-3-connector
+    networks:
+      - fl-network
+    ports:
+      - "12181:12181"
+      - "12182:12182"
+      - "12282:12282"
+      - "12283:12283"
+      - "12284:12284"
+    volumes:
+      - ./configs/resources/client-3-resources:/resources
+    environment:
+      EDC_FS_CONFIG: /resources/config.properties
+    depends_on:
+      client-3-nextcloud:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f -X POST -H 'X-API-Key: password' -H 'Content-Type: application/json' http://localhost:12182/management/v3/assets/request -d '{\"@context\":{\"@vocab\":\"https://w3id.org/edc/v0.0.1/ns/\"},\"@type\":\"QuerySpec\"}'"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Client 4
+
+  client-4-cloud-db:
+    image: postgres:13
+    container_name: client-4-cloud-db
+    networks:
+      - fl-network
+    restart: always
+    volumes:
+      - client-4-nextcloud-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdbadmin -d pdbnextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  client-4-nextcloud:
+    image: nextcloud:25
+    container_name: client-4-nextcloud
+    networks:
+      - fl-network
+    restart: always
+    ports:
+      - "8087:80"
+    volumes:
+      - client-4-nextcloud-storage:/var/www/html
+      - client-4-data:/data/client_4
+    environment:
+      - POSTGRES_HOST=client-4-cloud-db
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+      - NEXTCLOUD_ADMIN_USER=padmin
+      - NEXTCLOUD_ADMIN_PASSWORD=p123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost client-1-nextcloud client-2-nextcloud client-3-nextcloud client-4-nextcloud client-5-nextcloud client-6-nextcloud research-centre-nextcloud
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=512M
+      - APACHE_BODY_LIMIT=0
+    depends_on:
+      client-4-cloud-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  client-4-connector:
+    image: edc-ionos-nextcloud:1.0
+    container_name: client-4-connector
+    networks:
+      - fl-network
+    ports:
+      - "14181:14181"
+      - "14182:14182"
+      - "14282:14282"
+      - "14283:14283"
+      - "14284:14284"
+    volumes:
+      - ./configs/resources/client-4-resources:/resources
+    environment:
+      EDC_FS_CONFIG: /resources/config.properties
+    depends_on:
+      client-4-nextcloud:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f -X POST -H 'X-API-Key: password' -H 'Content-Type: application/json' http://localhost:14182/management/v3/assets/request -d '{\"@context\":{\"@vocab\":\"https://w3id.org/edc/v0.0.1/ns/\"},\"@type\":\"QuerySpec\"}'"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Client 5
+
+  client-5-cloud-db:
+    image: postgres:13
+    container_name: client-5-cloud-db
+    networks:
+      - fl-network
+    restart: always
+    volumes:
+      - client-5-nextcloud-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdbadmin -d pdbnextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  client-5-nextcloud:
+    image: nextcloud:25
+    container_name: client-5-nextcloud
+    networks:
+      - fl-network
+    restart: always
+    ports:
+      - "8089:80"
+    volumes:
+      - client-5-nextcloud-storage:/var/www/html
+      - client-5-data:/data/client_5
+    environment:
+      - POSTGRES_HOST=client-5-cloud-db
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+      - NEXTCLOUD_ADMIN_USER=padmin
+      - NEXTCLOUD_ADMIN_PASSWORD=p123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost client-1-nextcloud client-2-nextcloud client-3-nextcloud client-4-nextcloud client-5-nextcloud client-6-nextcloud research-centre-nextcloud
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=512M
+      - APACHE_BODY_LIMIT=0
+    depends_on:
+      client-5-cloud-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  client-5-connector:
+    image: edc-ionos-nextcloud:1.0
+    container_name: client-5-connector
+    networks:
+      - fl-network
+    ports:
+      - "16181:16181"
+      - "16182:16182"
+      - "16282:16282"
+      - "16283:16283"
+      - "16284:16284"
+    volumes:
+      - ./configs/resources/client-5-resources:/resources
+    environment:
+      EDC_FS_CONFIG: /resources/config.properties
+    depends_on:
+      client-5-nextcloud:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f -X POST -H 'X-API-Key: password' -H 'Content-Type: application/json' http://localhost:16182/management/v3/assets/request -d '{\"@context\":{\"@vocab\":\"https://w3id.org/edc/v0.0.1/ns/\"},\"@type\":\"QuerySpec\"}'"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Client 6
+
+  client-6-cloud-db:
+    image: postgres:13
+    container_name: client-6-cloud-db
+    networks:
+      - fl-network
+    restart: always
+    volumes:
+      - client-6-nextcloud-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdbadmin -d pdbnextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  client-6-nextcloud:
+    image: nextcloud:25
+    container_name: client-6-nextcloud
+    networks:
+      - fl-network
+    restart: always
+    ports:
+      - "8091:80"
+    volumes:
+      - client-6-nextcloud-storage:/var/www/html
+      - client-6-data:/data/client_6
+    environment:
+      - POSTGRES_HOST=client-6-cloud-db
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+      - NEXTCLOUD_ADMIN_USER=padmin
+      - NEXTCLOUD_ADMIN_PASSWORD=p123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost client-1-nextcloud client-2-nextcloud client-3-nextcloud client-4-nextcloud client-5-nextcloud client-6-nextcloud research-centre-nextcloud
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=512M
+      - APACHE_BODY_LIMIT=0
+    depends_on:
+      client-6-cloud-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  client-6-connector:
+    image: edc-ionos-nextcloud:1.0
+    container_name: client-6-connector
+    networks:
+      - fl-network
+    ports:
+      - "18181:18181"
+      - "18182:18182"
+      - "18282:18282"
+      - "18283:18283"
+      - "18284:18284"
+    volumes:
+      - ./configs/resources/client-6-resources:/resources
+    environment:
+      EDC_FS_CONFIG: /resources/config.properties
+    depends_on:
+      client-6-nextcloud:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f -X POST -H 'X-API-Key: password' -H 'Content-Type: application/json' http://localhost:18182/management/v3/assets/request -d '{\"@context\":{\"@vocab\":\"https://w3id.org/edc/v0.0.1/ns/\"},\"@type\":\"QuerySpec\"}'"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Client 7
+
+  client-7-cloud-db:
+    image: postgres:13
+    container_name: client-7-cloud-db
+    networks:
+      - fl-network
+    restart: always
+    volumes:
+      - client-7-nextcloud-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdbadmin -d pdbnextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  client-7-nextcloud:
+    image: nextcloud:25
+    container_name: client-7-nextcloud
+    networks:
+      - fl-network
+    restart: always
+    ports:
+      - "8093:80"
+    volumes:
+      - client-7-nextcloud-storage:/var/www/html
+      - client-7-data:/data/client_7
+    environment:
+      - POSTGRES_HOST=client-7-cloud-db
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+      - NEXTCLOUD_ADMIN_USER=padmin
+      - NEXTCLOUD_ADMIN_PASSWORD=p123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost client-1-nextcloud client-2-nextcloud client-3-nextcloud client-4-nextcloud client-5-nextcloud client-6-nextcloud client-7-nextcloud client-8-nextcloud client-9-nextcloud client-10-nextcloud research-centre-nextcloud
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=512M
+      - APACHE_BODY_LIMIT=0
+    depends_on:
+      client-7-cloud-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  client-7-connector:
+    image: edc-ionos-nextcloud:1.0
+    container_name: client-7-connector
+    networks:
+      - fl-network
+    ports:
+      - "20181:20181"
+      - "20182:20182"
+      - "20282:20282"
+      - "20283:20283"
+      - "20284:20284"
+    volumes:
+      - ./configs/resources/client-7-resources:/resources
+    environment:
+      EDC_FS_CONFIG: /resources/config.properties
+    depends_on:
+      client-7-nextcloud:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f -X POST -H 'X-API-Key: password' -H 'Content-Type: application/json' http://localhost:20182/management/v3/assets/request -d '{\"@context\":{\"@vocab\":\"https://w3id.org/edc/v0.0.1/ns/\"},\"@type\":\"QuerySpec\"}'"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Client 8
+
+  client-8-cloud-db:
+    image: postgres:13
+    container_name: client-8-cloud-db
+    networks:
+      - fl-network
+    restart: always
+    volumes:
+      - client-8-nextcloud-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdbadmin -d pdbnextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  client-8-nextcloud:
+    image: nextcloud:25
+    container_name: client-8-nextcloud
+    networks:
+      - fl-network
+    restart: always
+    ports:
+      - "8095:80"
+    volumes:
+      - client-8-nextcloud-storage:/var/www/html
+      - client-8-data:/data/client_8
+    environment:
+      - POSTGRES_HOST=client-8-cloud-db
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+      - NEXTCLOUD_ADMIN_USER=padmin
+      - NEXTCLOUD_ADMIN_PASSWORD=p123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost client-1-nextcloud client-2-nextcloud client-3-nextcloud client-4-nextcloud client-5-nextcloud client-6-nextcloud client-7-nextcloud client-8-nextcloud client-9-nextcloud client-10-nextcloud research-centre-nextcloud
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=512M
+      - APACHE_BODY_LIMIT=0
+    depends_on:
+      client-8-cloud-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  client-8-connector:
+    image: edc-ionos-nextcloud:1.0
+    container_name: client-8-connector
+    networks:
+      - fl-network
+    ports:
+      - "22181:22181"
+      - "22182:22182"
+      - "22282:22282"
+      - "22283:22283"
+      - "22284:22284"
+    volumes:
+      - ./configs/resources/client-8-resources:/resources
+    environment:
+      EDC_FS_CONFIG: /resources/config.properties
+    depends_on:
+      client-8-nextcloud:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f -X POST -H 'X-API-Key: password' -H 'Content-Type: application/json' http://localhost:22182/management/v3/assets/request -d '{\"@context\":{\"@vocab\":\"https://w3id.org/edc/v0.0.1/ns/\"},\"@type\":\"QuerySpec\"}'"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Client 9
+
+  client-9-cloud-db:
+    image: postgres:13
+    container_name: client-9-cloud-db
+    networks:
+      - fl-network
+    restart: always
+    volumes:
+      - client-9-nextcloud-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdbadmin -d pdbnextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  client-9-nextcloud:
+    image: nextcloud:25
+    container_name: client-9-nextcloud
+    networks:
+      - fl-network
+    restart: always
+    ports:
+      - "8097:80"
+    volumes:
+      - client-9-nextcloud-storage:/var/www/html
+      - client-9-data:/data/client_9
+    environment:
+      - POSTGRES_HOST=client-9-cloud-db
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+      - NEXTCLOUD_ADMIN_USER=padmin
+      - NEXTCLOUD_ADMIN_PASSWORD=p123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost client-1-nextcloud client-2-nextcloud client-3-nextcloud client-4-nextcloud client-5-nextcloud client-6-nextcloud client-7-nextcloud client-8-nextcloud client-9-nextcloud client-10-nextcloud research-centre-nextcloud
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=512M
+      - APACHE_BODY_LIMIT=0
+    depends_on:
+      client-9-cloud-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  client-9-connector:
+    image: edc-ionos-nextcloud:1.0
+    container_name: client-9-connector
+    networks:
+      - fl-network
+    ports:
+      - "24181:24181"
+      - "24182:24182"
+      - "24282:24282"
+      - "24283:24283"
+      - "24284:24284"
+    volumes:
+      - ./configs/resources/client-9-resources:/resources
+    environment:
+      EDC_FS_CONFIG: /resources/config.properties
+    depends_on:
+      client-9-nextcloud:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f -X POST -H 'X-API-Key: password' -H 'Content-Type: application/json' http://localhost:24182/management/v3/assets/request -d '{\"@context\":{\"@vocab\":\"https://w3id.org/edc/v0.0.1/ns/\"},\"@type\":\"QuerySpec\"}'"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # Client 10
+
+  client-10-cloud-db:
+    image: postgres:13
+    container_name: client-10-cloud-db
+    networks:
+      - fl-network
+    restart: always
+    volumes:
+      - client-10-nextcloud-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdbadmin -d pdbnextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  client-10-nextcloud:
+    image: nextcloud:25
+    container_name: client-10-nextcloud
+    networks:
+      - fl-network
+    restart: always
+    ports:
+      - "8099:80"
+    volumes:
+      - client-10-nextcloud-storage:/var/www/html
+      - client-10-data:/data/client_10
+    environment:
+      - POSTGRES_HOST=client-10-cloud-db
+      - POSTGRES_DB=pdbnextcloud
+      - POSTGRES_USER=pdbadmin
+      - POSTGRES_PASSWORD=pdb123
+      - NEXTCLOUD_ADMIN_USER=padmin
+      - NEXTCLOUD_ADMIN_PASSWORD=p123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost client-1-nextcloud client-2-nextcloud client-3-nextcloud client-4-nextcloud client-5-nextcloud client-6-nextcloud client-7-nextcloud client-8-nextcloud client-9-nextcloud client-10-nextcloud research-centre-nextcloud
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=512M
+      - APACHE_BODY_LIMIT=0
+    depends_on:
+      client-10-cloud-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  client-10-connector:
+    image: edc-ionos-nextcloud:1.0
+    container_name: client-10-connector
+    networks:
+      - fl-network
+    ports:
+      - "26181:26181"
+      - "26182:26182"
+      - "26282:26282"
+      - "26283:26283"
+      - "26284:26284"
+    volumes:
+      - ./configs/resources/client-10-resources:/resources
+    environment:
+      EDC_FS_CONFIG: /resources/config.properties
+    depends_on:
+      client-10-nextcloud:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f -X POST -H 'X-API-Key: password' -H 'Content-Type: application/json' http://localhost:26182/management/v3/assets/request -d '{\"@context\":{\"@vocab\":\"https://w3id.org/edc/v0.0.1/ns/\"},\"@type\":\"QuerySpec\"}'"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+
+  # Research Centre
+
+  research-centre-cloud-db:
+    image: postgres:13
+    container_name: research-centre-cloud-db
+    networks:
+      - fl-network
+    restart: always
+    volumes:
+      - research-centre-nextcloud-db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=cdbnextcloud
+      - POSTGRES_USER=cdbadmin
+      - POSTGRES_PASSWORD=cdb123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cdbadmin -d cdbnextcloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  research-centre-nextcloud:
+    image: nextcloud:25
+    container_name: research-centre-nextcloud
+    networks:
+      - fl-network
+    restart: always
+    ports:
+      - "8082:80"
+    volumes:
+      - research-centre-nextcloud-storage:/var/www/html
+      - research-centre-data:/data
+    environment:
+      - POSTGRES_HOST=research-centre-cloud-db
+      - POSTGRES_DB=cdbnextcloud
+      - POSTGRES_USER=cdbadmin
+      - POSTGRES_PASSWORD=cdb123
+      - NEXTCLOUD_ADMIN_USER=cadmin
+      - NEXTCLOUD_ADMIN_PASSWORD=c123
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost client-1-nextcloud client-2-nextcloud client-3-nextcloud client-4-nextcloud client-5-nextcloud client-6-nextcloud research-centre-nextcloud
+      - PHP_MEMORY_LIMIT=1024M
+      - PHP_UPLOAD_LIMIT=512M
+      - APACHE_BODY_LIMIT=0
+    depends_on:
+      research-centre-cloud-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+  research-centre-connector:
+    image: edc-ionos-nextcloud:1.0
+    container_name: research-centre-connector
+    networks:
+      - fl-network
+    ports:
+      - "9191:9191" # API
+      - "9192:9192" # Management
+      - "9292:9292" # Protocol
+      - "9293:9293" # Control
+      - "9294:9294" # Public
+    volumes:
+      - ./configs/resources/research-centre-resources:/resources
+    environment:
+      EDC_FS_CONFIG: /resources/config.properties
+    depends_on:
+      research-centre-nextcloud:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f -X POST -H 'X-API-Key: password' -H 'Content-Type: application/json' http://localhost:9192/management/v3/assets/request -d '{\"@context\":{\"@vocab\":\"https://w3id.org/edc/v0.0.1/ns/\"},\"@type\":\"QuerySpec\"}'"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+  # NS3 Simulator
+
+  ns3-simulator:
+    build:
+      context: .
+      dockerfile: docker-images/Dockerfile.ns3
+    ports:
+      - "9099:9099"
+    networks:
+      - fl-network
+    environment:
+      NUM_CLIENTS: ${NUM_CLIENTS:-2}
+      NS3_NETWORK_TYPE: ${NS3_NETWORK_TYPE:-ethernet}
+      NS3_NETWORK_MODE: ${NS3_NETWORK_MODE:-sync}
+      NS3_PACKET_SIZE: ${NS3_PACKET_SIZE:-1024}
+      NS3_MODEL_SIZE: ${NS3_MODEL_SIZE:-9500}
+      NS3_CLIENT_DATA_RATE: ${NS3_CLIENT_DATA_RATE:-2048kbps}
+      NS3_SERVER_DATA_RATE: ${NS3_SERVER_DATA_RATE:-10000kbps}
+      NS3_PORT: 9099
+      RUN_ID: ${RUN_ID:-default}
+      LOGS_PATH: /results/${RUN_ID:-default}
+      RESULTS_PATH: /results/${RUN_ID:-default}
+    volumes:
+      - ${NS3_HOST_LOGS_PATH:-../logs}:/logs
+      - ${NS3_HOST_RESULTS_PATH:-../results}:/results

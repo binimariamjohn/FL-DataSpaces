@@ -1,0 +1,60 @@
+{
+  "edc": {
+    "providers_connectors": [
+      {
+        "name": "client-1-provider",
+        "nextcloud_container": "client-1-nextcloud",
+        "endpoint": "http://localhost:8081",
+        "config_path": "./resources/client-1-resources/config.properties",
+        "price_info": "15000",
+        "training_allowed": "true"
+      },
+      {
+        "name": "client-2-provider",
+        "nextcloud_container": "client-2-nextcloud",
+        "endpoint": "http://localhost:8083",
+        "config_path": "./resources/client-2-resources/config.properties",
+        "price_info": "12000",
+        "training_allowed": "true"
+      },
+      {
+        "name": "client-3-provider",
+        "nextcloud_container": "client-3-nextcloud",
+        "endpoint": "http://localhost:8085",
+        "config_path": "./resources/client-3-resources/config.properties",
+        "price_info": "12000",
+        "training_allowed": "true"
+      },
+      {
+        "name": "client-4-provider",
+        "nextcloud_container": "client-4-nextcloud",
+        "endpoint": "http://localhost:14181",
+        "config_path": "./resources/client-4-resources/config.properties",
+        "price_info": "12000",
+        "training_allowed": "true"
+      },
+      {
+        "name": "client-5-provider",
+        "nextcloud_container": "client-5-nextcloud",
+        "endpoint": "http://localhost:16181",
+        "config_path": "./resources/client-5-resources/config.properties",
+        "price_info": "12000",
+        "training_allowed": "true"
+      },
+      {
+        "name": "client-6-provider",
+        "nextcloud_container": "client-6-nextcloud",
+        "endpoint": "http://localhost:18181",
+        "config_path": "./resources/client-6-resources/config.properties",
+        "price_info": "12000",
+        "training_allowed": "true"
+      }
+    ],
+    "consumer_connectors": [
+      {
+        "name": "research-centre-consumer",
+        "config_path": "./resources/research-centre-resources/config.properties"
+      }
+    ]
+  }
+}
