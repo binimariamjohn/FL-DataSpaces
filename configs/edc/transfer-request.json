@@ -1,0 +1,16 @@
+{
+  "@context": { "@vocab": "https://w3id.org/edc/v0.0.1/ns/" },
+  "@type": "TransferRequestDto",
+  "counterPartyAddress": "{{PROVIDER_DSP}}",
+  "contractId": "{{AGREEMENT_ID}}",
+  "assetId": "{{ASSET_ID}}",
+  "protocol": "dataspace-protocol-http",
+  "transferType": "Nextcloud-PUSH",
+  "dataDestination": {
+    "type": "Nextcloud",
+    "baseUrl": "http://{{CONSUMER_NC}}:80",
+    "filePath": "{{TARGET_PATH}}",
+    "keyName": "{{CONSUMER_ID}}-key",
+    "receiverHttpEndpoint": "http://{{CONSUMER_CONNECTOR}}:{{CONSUMER_MANAGEMENT_PORT}}/management"
+  }
+}

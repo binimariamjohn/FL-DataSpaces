@@ -1,0 +1,22 @@
+{
+  "@context": {
+    "@vocab": "https://w3id.org/edc/v0.0.1/ns/"
+  },
+  "@id": "{{ASSET_ID}}",
+  "properties": {
+    "name": "Dataset",
+    "description": "FL dataset",
+    "contenttype": "application/gzip",
+    "dataset_id": "{{DATASET_ID}}",
+    "client_id": "{{CLIENT_ID}}",
+    "price_info": "{{PRICE_INFO}}",
+    "training_allowed": "{{TRAINING_ALLOWED}}"
+  },
+  "dataAddress": {
+    "type": "Nextcloud",
+    "baseUrl": "http://{{PROVIDER_NC}}:80",
+    "filePath": "{{remote_base_path}}",
+    "fileName": "{{filename}}",
+    "keyName": "{{PROVIDER_ID}}-key"
+  }
+}

@@ -1,0 +1,29 @@
+#! /usr/bin/env python
+
+# A list of the modules that will be enabled when ns-3 is run.
+# Modules that depend on the listed modules will be enabled also.
+#
+# Minimal set for WiFi-based FL simulation (excludes LTE, spectrum, csma, and other unnecessary modules)
+# Core modules needed: wifi -> internet -> network -> core
+modules_enabled = [
+    'ns3-core',
+    'ns3-network', 
+    'ns3-internet',
+    'ns3-wifi',
+    'ns3-mobility',
+    'ns3-propagation'
+]
+
+# Explicitly disabled modules to prevent dependency pulling
+modules_disabled = [
+    'ns3-lte',
+    'ns3-spectrum',
+    'ns3-applications',
+    'ns3-point-to-point',
+    'ns3-csma',
+    'ns3-energy',
+    'ns3-config-store',
+    'ns3-buildings',
+    'ns3-virtual-net-device',
+    'ns3-lr-wpan'
+]
