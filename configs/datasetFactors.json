@@ -1,8 +1,8 @@
 {
     "paths": {
-        "dataset_path": "../data/",
-        "results_path": "../results/",
-        "logs_path": "../logs"
+        "dataset_path": "data/",
+        "results_path": "./results/",
+        "logs_path": "./logs/"
     },
     "random_seed": 42,
     "input_shape": [28, 28, 1],
@@ -19,7 +19,7 @@
     "dataset_factors": [
         {
             "num_clients": 1,
-            "partition_size": 0,
+            "partition_size": 10000,
             "distribution": "iid",
             "fairness_ratios": [1]
         }

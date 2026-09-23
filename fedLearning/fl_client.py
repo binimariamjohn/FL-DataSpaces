@@ -110,6 +110,11 @@ def submit_update(round_or_iter, trained_weights, num_samples, train_metrics, up
         "client_id": CLIENT_ID,
         "round": round_or_iter,
         "iteration": round_or_iter,
+        "num_samples": num_samples,
+        "metrics": train_metrics,
+        "upload_time": upload_time,
+        "upload_bytes": upload_bytes,
+        "upload_completion_timestamp": upload_completion_timestamp,
     }
     if not WITH_EDC:
         payload["model_weights"] = serialize_weights(trained_weights)

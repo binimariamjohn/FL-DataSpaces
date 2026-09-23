@@ -170,7 +170,7 @@ services:
       - fl-network
     volumes:
       - .:/app
-      - ../data:/data
+      - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - client-1-nextcloud-storage:/nextcloud-data
     command: python3 fedLearning/fl_client.py
@@ -187,7 +187,7 @@ services:
       - fl-network
     volumes:
       - .:/app
-      - ../data:/data
+      - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - client-2-nextcloud-storage:/nextcloud-data
     command: python3 fedLearning/fl_client.py
@@ -204,7 +204,7 @@ services:
       - fl-network
     volumes:
       - .:/app
-      - ../data:/data
+      - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - client-3-nextcloud-storage:/nextcloud-data
     command: python3 fedLearning/fl_client.py
@@ -221,7 +221,7 @@ services:
       - fl-network
     volumes:
       - .:/app
-      - ../data:/data
+      - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - client-4-nextcloud-storage:/nextcloud-data
     command: python3 fedLearning/fl_client.py
@@ -238,7 +238,7 @@ services:
       - fl-network
     volumes:
       - .:/app
-      - ../data:/data
+      - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - client-5-nextcloud-storage:/nextcloud-data
     command: python3 fedLearning/fl_client.py
@@ -255,7 +255,7 @@ services:
       - fl-network
     volumes:
       - .:/app
-      - ../data:/data
+      - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - client-6-nextcloud-storage:/nextcloud-data
     command: python3 fedLearning/fl_client.py
@@ -272,7 +272,7 @@ services:
       - fl-network
     volumes:
       - .:/app
-      - ../data:/data
+      - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - client-7-nextcloud-storage:/nextcloud-data
     command: python3 fedLearning/fl_client.py
@@ -289,7 +289,7 @@ services:
       - fl-network
     volumes:
       - .:/app
-      - ../data:/data
+      - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - client-8-nextcloud-storage:/nextcloud-data
     command: python3 fedLearning/fl_client.py
@@ -306,7 +306,7 @@ services:
       - fl-network
     volumes:
       - .:/app
-      - ../data:/data
+      - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - client-9-nextcloud-storage:/nextcloud-data
     command: python3 fedLearning/fl_client.py
@@ -323,7 +323,7 @@ services:
       - fl-network
     volumes:
       - .:/app
-      - ../data:/data
+      - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
       - client-10-nextcloud-storage:/nextcloud-data
     command: python3 fedLearning/fl_client.py
@@ -342,7 +342,7 @@ services:
       - "9091:9091"
     volumes:
       - .:/app
-      - ../data:/data
+      - ./data:/data
       - ${RESULTS_PATH:-../../results}:/results
       - ${LOGS_PATH:-../../logs}:/logs
       - /var/run/docker.sock:/var/run/docker.sock

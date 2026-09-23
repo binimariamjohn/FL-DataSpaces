@@ -6,4 +6,19 @@ __pycache__/
 venv/
 env/
 .env
+
+# Generated datasets (large, reproducible via prepare_dataset.py / split_data.py)
+data/
+
+# Experiment outputs (logs, model checkpoints, metrics per run)
+results/
+logs/
+
+# Generated global model snapshots
+public/
+
+# Java/Gradle build artifacts
+dataspace/.gradle/
+dataspace/**/build/
+dataspace/**/.gradle/
 EOF

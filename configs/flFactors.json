@@ -4,8 +4,8 @@
     "server_host": "rc-fl-server",
     "server_port": 9091,
     "fl_script": "./fedLearning/",
-    "rounds": 2,
-    "local_epochs": 5,
+    "rounds": 1,
+    "local_epochs": 1,
     "batch_size": 64,
     "aggregation": "fedasync",
     "learning_rate": 0.01

@@ -23,10 +23,9 @@ RUN python3 ./waf configure \
     --enable-examples \
     --disable-werror \
     --enable-modules=core,network,applications,bridge,csma,energy,flow-monitor,internet,mobility,point-to-point,propagation,spectrum,stats,traffic-control,wifi,reliability && \
-    python3 ./waf build
+    python3 ./waf build -j1
 
 CMD ["bash", "-lc", "mkdir -p \"${LOGS_PATH}\" && cd /ns3 && python3 ./waf --run \"wifi_exp --NumClients=${NUM_CLIENTS} --Port=${NS3_PORT} --NetworkType=${NS3_NETWORK_TYPE} --LearningModel=${NS3_NETWORK_MODE} --MaxPacketSize=${NS3_PACKET_SIZE} --ModelSize=${NS3_MODEL_SIZE} --ClientDataRate=${NS3_CLIENT_DATA_RATE} --ServerDataRate=${NS3_SERVER_DATA_RATE}\""]
-
 
 
 

@@ -24,8 +24,8 @@ tensorflow==2.20.0
 
 opencv-python==4.9.0.80
 scikit-image>=0.23.2
-albumentations>=1.4.24
-albucore>=0.0.16
+albumentations==1.4.18
+albucore==0.0.17
 torch>=2.0.0
 torchvision>=0.15.0
 
